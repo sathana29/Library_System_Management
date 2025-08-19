@@ -1,3 +1,25 @@
+<?php 
+include 'config.php'; 
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") { 
+    $name = $_POST['name']; 
+    $email = $_POST['email']; 
+    $message = $_POST['message']; 
+
+    $sql = "INSERT INTO contact (name, email, message) VALUES ('$name', '$email', '$message')"; 
+
+    if ($conn->query($sql) === TRUE) { 
+        echo "<p>Message sent successfully!</p>"; 
+    } else { 
+        echo "Error: " . $sql . "<br>" . $conn->error; 
+    } 
+
+    $conn->close(); 
+} 
+?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,9 +73,9 @@
 <div> 
 <ul class="navbar-nav"> 
 <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li> 
-<li class="nav-item"><a class="nav-link" href="form.html">Form</a></li> 
+<li class="nav-item"><a class="nav-link" href="form.php">Form</a></li> 
 <li class="nav-item"><a class="nav-link" href="about.html">About</a></li> 
-<li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li> 
+<li class="nav-item"><a class="nav-link" href="contact.php">Contact</a></li> 
 </ul> 
 </div> 
 </div> 
@@ -63,23 +85,27 @@
     <div class="col-md-8">
       <div class="contact-section">
         <h2 class="text-center mb-4">📬 Get in Touch</h2>
-        <form onsubmit="return validateContactForm()">
-          <div class="mb-3">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" class="form-control bg-secondary" id="name" placeholder="Your full name">
-          </div>
-          <div class="mb-3">
-            <label for="email" class="form-label">Email address</label>
-            <input type="email" class="form-control bg-secondary" id="email" placeholder="you@example.com">
-          </div>
-          <div class="mb-3">
-            <label for="message" class="form-label ">Message</label>
-            <textarea class="form-control bg-secondary" id="message" rows="4" placeholder="Your message..."></textarea>
-          </div>
-          <div class="d-grid">
-            <button type="submit" class="btn btn-custom">Send Message</button>
-          </div>
-        </form>
+        <form method="POST" action="contact.php" onsubmit="return validateContactForm()">
+  <div class="mb-3">
+    <label for="name" class="form-label">Name</label>
+    <input type="text" class="form-control bg-secondary" id="name" name="name" placeholder="Your full name" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">Email address</label>
+    <input type="email" class="form-control bg-secondary" id="email" name="email" placeholder="you@example.com" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="message" class="form-label">Message</label>
+    <textarea class="form-control bg-secondary" id="message" name="message" rows="4" placeholder="Your message..." required></textarea>
+  </div>
+
+  <div class="d-grid">
+    <button type="submit" class="btn btn-custom">Send Message</button>
+  </div>
+</form>
+
       </div>
     </div>
   </div>
@@ -104,7 +130,7 @@ function validateContactForm() {
   alert("Message submitted successfully!");
   return true;
 }
+ 
 </script>
-
 </body>
 </html>
