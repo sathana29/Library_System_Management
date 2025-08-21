@@ -2,50 +2,53 @@
 include 'config.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get and sanitize user input
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $phone = trim($_POST['phone']);
+    $name  = $_POST['name'];
+    $email = $_POST['email'];
+    $phone = $_POST['phone'];
 
-    // First: Check if the email already exists
-    $sql_check = "SELECT * FROM entries WHERE email = ?";
-    $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->bind_param("s", $email);
-    $stmt_check->execute();
-    $result = $stmt_check->get_result();
+    // Validate phone number (only digits and exactly 10 digits)
+    if (!preg_match("/^\d{10}$/", $phone)) {
+        header("Location: form.php?status=invalid_phone");
+        exit();
+    }
+
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        header("Location: form.php?status=invalid_email");
+        exit();
+    }
+
+    // Check if email already exists
+    $checkEmail = "SELECT * FROM entries WHERE email = '$email'";
+    $result = $conn->query($checkEmail);
 
     if ($result->num_rows > 0) {
-        // Email already exists, stop execution
-        die("Email already exists!");
-    }
-
-    // If email doesn't exist, insert the data
-    $sql_insert = "INSERT INTO entries (name, email, phone) VALUES (?, ?, ?)";
-    $stmt_insert = $conn->prepare($sql_insert);
-    $stmt_insert->bind_param("sss", $name, $email, $phone);
-
-    if ($stmt_insert->execute()) {
-        echo "<p>Entry added successfully!</p>";
+        header("Location: form.php?status=email_exists");
     } else {
-        echo "Error: " . $stmt_insert->error;
+        // Insert new entry
+        $sql = "INSERT INTO entries (name, email, phone) VALUES ('$name', '$email', '$phone')";
+        if ($conn->query($sql) === TRUE) {
+            header("Location: form.php?status=success");
+        } else {
+            header("Location: form.php?status=error");
+        }
     }
 
-    // Close statements and connection
-    $stmt_check->close();
-    $stmt_insert->close();
     $conn->close();
+    exit();
 }
 ?>
 
-     
-      ?>
+
+
+  
      
 <!DOCTYPE html> 
 <html lang="en"> 
 <head> 
   <meta charset="UTF-8"> 
   <meta name="viewport" content="width=device-width, initial-scale=1"> 
-  <title>Form - Your Project Title</title> 
+  <title>Form - Library System Management</title> 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
@@ -109,31 +112,48 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   
 
 
-  <script> 
-    function validateForm() { 
-      let name = document.getElementById("name").value; 
-      let email = document.getElementById("email").value; 
-      let phone = document.getElementById("phone").value; 
-      
-      if (name === "" || email === "" || phone === "") { 
-        alert("All fields required!"); 
-        return false; 
-      } 
+  <script>
+  function validateForm() {
+    let name = document.getElementById("name").value; 
+    let email = document.getElementById("email").value; 
+    let phone = document.getElementById("phone").value; 
+    
+    if (name === "" || email === "" || phone === "") { 
+      alert("All fields are required!"); 
+      return false; 
+    } 
 
-      if(!filter_var($email, FILTER_VALIDATE_EMAIL)){ 
-        die("Invalid email format!");
-      } 
-
-      if (phone.length !== 10 || isNaN(phone)) { 
-        alert("Phone must be 10 digits!"); 
-        return false; 
-      } 
-
-        alert("Message submitted successfully!");
-        return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert("Invalid email format!");
+      return false;
     }
 
-     
-  </script> 
-</body> 
+    if (phone.length !== 10 || isNaN(phone)) { 
+      alert("Phone number must be exactly 10 digits!"); 
+      return false; 
+    }
+
+    return true; // allow form submission
+  }
+
+  // Alert based on PHP redirect status
+  window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+
+    if (status === "success") {
+      alert("Entry added successfully!");
+    } else if (status === "email_exists") {
+      alert("Error: This email is already used.");
+    } else if (status === "invalid_phone") {
+      alert("Error: Phone number must be exactly 10 digits.");
+    } else if (status === "invalid_email") {
+      alert("Error: Invalid email format.");
+    } else if (status === "error") {
+      alert("Something went wrong. Please try again.");
+    }
+  };
+</script>
+
 </html>
